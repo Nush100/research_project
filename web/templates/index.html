@@ -21,18 +21,38 @@
     </style>
 </head>
 <body>
-    <div class="row">
-        <div class="column" style="background-color:#aaa;">
-            <h1>Upload an Image</h1>
-            <form method="POST" enctype="multipart/form-data">
-                <input type="file" name="image">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="column" style="background-color:#aaa;">
+                <h1>Upload Answer Image</h1>
+                <input type="file" name="answer">
+            </div>
+            <div class="column" style="background-color:#aaa;">
+                <h1>Upload Marking Image</h1>
+                <input type="file" name="marking">
                 <input type="submit" value="Upload">
-            </form>
+            </div>
+        </div>
+    </form>
+    <div class="row">
+        <div class="column" style="background-color:#bbb;">
+            {% if answer_src and marking_src and answer_modified_src and marking_modified_src %}
+                <h2>Original Answer Image:</h2>
+                <img src="{{ answer_src }}" alt="Original Answer Image" width="400">
         </div>
         <div class="column" style="background-color:#bbb;">
-            {% if image_src %}
-                <h2>Uploaded Image:</h2>
-                <img src="{{ image_src }}" alt="Uploaded Image" width="400">
+                <h2>Original Marking Image:</h2>
+                <img src="{{ marking_src }}" alt="Original Marking Image" width="400">
+        </div>
+    </div>
+    <div class="row">  
+        <div class="column" style="background-color:#bbb;"> 
+            <h2>Processed Answer Image:</h2>
+            <img src="{{ answer_modified_src }}" alt="Processed Answer Image" width="400">
+        </div>
+        <div class="column" style="background-color:#bbb;"> 
+            <h2>Processed Marking Image:</h2>
+            <img src="{{ marking_modified_src }}" alt="Processed Marking Image" width="400">
             {% endif %}
         </div>
     </div>
