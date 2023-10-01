@@ -35,24 +35,25 @@
         </div>
     </form>
     <div class="row">
-        <div class="column" style="background-color:#bbb;">
-            {% if answer_src and marking_src and answer_modified_src and marking_modified_src %}
+        <div class="column">
+            {% if answer_src and marking_src and answer_modified_src and evaluation_result %}
                 <h2>Original Answer Image:</h2>
                 <img src="{{ answer_src }}" alt="Original Answer Image" width="400">
-        </div>
-        <div class="column" style="background-color:#bbb;">
+            </div>
+            <div class="column">
                 <h2>Original Marking Image:</h2>
                 <img src="{{ marking_src }}" alt="Original Marking Image" width="400">
+            </div>
         </div>
     </div>
     <div class="row">  
-        <div class="column" style="background-color:#bbb;"> 
+        <div class="column"> 
             <h2>Processed Answer Image:</h2>
             <img src="{{ answer_modified_src }}" alt="Processed Answer Image" width="400">
         </div>
-        <div class="column" style="background-color:#bbb;"> 
-            <h2>Processed Marking Image:</h2>
-            <img src="{{ marking_modified_src }}" alt="Processed Marking Image" width="400">
+        <div class="column"> 
+            <h2>ChatGPT Evaluation Result:</h2>
+            <p>{{ evaluation_result }}</p>
             {% endif %}
         </div>
     </div>
