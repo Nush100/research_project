@@ -21,14 +21,17 @@
     </style>
 </head>
 <body>
+    <div style="text-align: center;">
+        <h2>Welcome to Easy Question Marking</h2>
+    </div>    
     <form method="POST" enctype="multipart/form-data">
         <div class="row">
             <div class="column" style="background-color:#aaa;">
-                <h1>Upload Answer Image</h1>
+                <h2>Upload Answer Image</h2>
                 <input type="file" name="answer">
             </div>
             <div class="column" style="background-color:#aaa;">
-                <h1>Upload Marking Image</h1>
+                <h2>Upload Marking Image</h2>
                 <input type="file" name="marking">
                 <input type="submit" value="Upload">
             </div>
@@ -36,29 +39,44 @@
     </form>
     <div class="row">
         <div class="column">
-            {% if answer_src and marking_src and answer_modified_src and evaluation_result %}
+            {% if answer_src %}
                 <h2>Original Answer Image:</h2>
                 <img src="{{ answer_src }}" alt="Original Answer Image" width="400">
+            {% endif %}
             </div>
             <div class="column">
+            {% if marking_src %}
                 <h2>Original Marking Image:</h2>
                 <img src="{{ marking_src }}" alt="Original Marking Image" width="400">
+            {% endif %}
             </div>
         </div>
     </div>
     <div class="row">  
-        <div class="column"> 
+        <div class="column">
+            {% if answer_modified_src %} 
             <h2>Processed Answer Image:</h2>
             <img src="{{ answer_modified_src }}" alt="Processed Answer Image" width="400">
+            {% endif %}
         </div>
         <div class="column"> 
+            {% if evaluation_answer_chatgpt %}
+            <h2>Marking Evaluation Result:</h2>
+            <p>According to the marking scheme, The answer is {{ evaluation_answer_marking }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">   
+        <div class="column"> 
+            {% if evaluation_answer_chatgpt %}
             <h2>ChatGPT Evaluation Result:</h2>
-            <p>{{ evaluation_result }}</p>
+            <p>{{ evaluation_answer_chatgpt }}</p>
             {% endif %}
         </div>
     </div>
 </body>
 </html>
+
 
 
 
