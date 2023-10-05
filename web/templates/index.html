@@ -54,13 +54,27 @@
     </div>
     <div class="row">  
         <div class="column">
+            {% if answer_text %}
+            <h2>Answer Given:</h2>
+            <p>According to the image, The answer given is {{ answer_text }}</p>
+            {% endif %}
+        </div>
+        <div class="column"> 
+            {% if marking_text %}
+            <h2>Expected answer:</h2>
+            <p>According to the marking scheme, The answer expected is {{ marking_text }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">  
+        <div class="column">
             {% if answer_modified_src %} 
             <h2>Processed Answer Image:</h2>
             <img src="{{ answer_modified_src }}" alt="Processed Answer Image" width="400">
             {% endif %}
         </div>
         <div class="column"> 
-            {% if evaluation_answer_chatgpt %}
+            {% if evaluation_answer_marking %}
             <h2>Marking Evaluation Result:</h2>
             <p>According to the marking scheme, The answer is {{ evaluation_answer_marking }}</p>
             {% endif %}
@@ -69,14 +83,16 @@
     <div class="row">   
         <div class="column"> 
             {% if evaluation_answer_chatgpt %}
-            <h2>ChatGPT Evaluation Result:</h2>
+            <h2>More Facts</h2>
             <p>{{ evaluation_answer_chatgpt }}</p>
+            {% endif %}
+        </div>
+        <div class="column"> 
+            {% if marks %}
+            <h2>Total Marks</h2>
+            <p>{{ marks }}</p>
             {% endif %}
         </div>
     </div>
 </body>
 </html>
-
-
-
-

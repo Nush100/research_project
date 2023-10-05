@@ -11,8 +11,6 @@ reader = easyocr.Reader(['en'], gpu=False)
 
 tick_image_path = "C:/Study/NSBM/research/sourcecode/images/questions/tick.png"
 cross_image_path = "C:/Study/NSBM/research/sourcecode/images/questions/cross.png"
-
-# Read tick and cross images
 tick_image = cv2.imread(tick_image_path)
 cross_image = cv2.imread(cross_image_path)
 
@@ -43,13 +41,16 @@ def evaluate_answer_chatgpt(answer_text):
 
 #evaluate the answer according to the marking scheme
 def evaluate_answer_marking(marking_txt, answer_txt): 
+    marks = 0
     if marking_txt.lower() in answer_txt.lower():
         sign = tick_image
         word = "correct" 
+        marks = marks + 5
     else:
         sign = cross_image
         word = "wrong" 
-    return word, sign
+        marks = marks + 5
+    return word, sign, marks
 
 
 #if the answer is correct add a tick to image else add a cross
@@ -59,15 +60,8 @@ def overlay_tick_on_answer(answer_img, tick_img):
         answer_img_pil = Image.fromarray(cv2.cvtColor(answer_img, cv2.COLOR_BGR2RGB))
         tick_img_pil = Image.fromarray(cv2.cvtColor(tick_img, cv2.COLOR_BGR2RGB))
 
-        if answer_img_pil.width > 1000 and answer_img_pil.height > 400:
             # Resize the tick image to 150x150
-            tick_img_pil = tick_img_pil.resize((150, 100), resample=Image.BICUBIC)
-        else:
-            # Resize the tick image to 80x80
-            tick_img_pil = tick_img_pil.resize((80, 80), resample=Image.BICUBIC)
-
-        # Resize the tick image
-        #tick_img_pil = tick_img_pil.resize((80, 80), resample=Image.BICUBIC)
+        tick_img_pil = tick_img_pil.resize((150, 100), resample=Image.BICUBIC)
 
         # Ensure both images have an alpha channel
         answer_img_pil = answer_img_pil.convert('RGBA')
@@ -104,7 +98,7 @@ def read_images(answer_data, marking_data):
     answer_text =  read_text_from_image(answer_img)
     marking_text = read_text_from_image(marking_img)
 
-    evaluation_marking, sign_marking = evaluate_answer_marking(marking_text, answer_text)
+    evaluation_marking, sign_marking, marks = evaluate_answer_marking(marking_text, answer_text)
     print(evaluation_marking)
     evaluation, sign = evaluate_answer_chatgpt(answer_text)
     answer = overlay_tick_on_answer(answer_img, sign_marking)
@@ -116,9 +110,12 @@ def read_images(answer_data, marking_data):
     return (
         f"data:image/jpeg;base64,{encoded_answer}",
         f"data:image/jpeg;base64,{encoded_marking}",
+        answer_text,
+        marking_text,
         f"data:image/jpeg;base64,{encoded_answer_modified}",
         evaluation_marking,
-        evaluation
+        evaluation,
+        marks
     )
 
 #connect to the front end
@@ -133,19 +130,22 @@ def index():
             answer_data = answer.read()
             marking_data = marking.read()
 
-            answer_image, marking_image, answer_modified, evaluation_answer_marking, evaluation_answer_chatgpt = read_images(answer_data, marking_data)
+            answer_image, marking_image, answer_text, marking_text, answer_modified, evaluation_answer_marking, evaluation_answer_chatgpt, marks = read_images(answer_data, marking_data)
 
             # Display the resized images on the page
             return render_template(
                 'index.html', 
                 answer_src=answer_image,
                 marking_src=marking_image, 
+                answer_text=answer_text,
+                marking_text=marking_text,
                 answer_modified_src=answer_modified,
                 evaluation_answer_marking=evaluation_answer_marking,
-                evaluation_answer_chatgpt=evaluation_answer_chatgpt
+                evaluation_answer_chatgpt=evaluation_answer_chatgpt,
+                marks=marks
             )
 
-    return render_template('index.html', answer_src=None, marking_src=None, answer_modified_src=None, evaluation_answer_marking='', evaluation_answer_chatgpt='')
+    return render_template('index.html', answer_src=None, marking_src=None, answer_text='', marking_text='', answer_modified_src=None, evaluation_answer_marking='', evaluation_answer_chatgpt='', marks='')
 
 if __name__ == '__main__':
     app.run(debug=True)
