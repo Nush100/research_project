@@ -61,61 +61,30 @@
                 {% endfor %}
             {% endif %}
         </div> 
-        <div class="column">
-            {% if answer_texts %}
-                <h2>Texts in Answer Segments:</h2>
-                {% for text in answer_texts %}
-                    <p>{{ text }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
     </div>
-    <div class="row">  
-        <div class="column">
-            {% if marking_segments_src %}
-                <h2>Marking Segments:</h2>
-                {% for segment_src in marking_segments_src %}
-                    <img src="{{ segment_src }}" alt="Marking Segment" width="400">
-                {% endfor %}
-            {% endif %}
-        </div>
-        <div class="column">  
-            {% if marking_texts %}
-                <h2>Texts in Marking Segments:</h2>
-                {% for text in marking_texts %}
-                    <p>{{ text }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-    </div>
-    <div class="row">  
-        <div class="column">
-            {% if reordered_answer_texts %}
-                <h2>Reorderd Answers</h2>
-                {% for text in reordered_answer_texts %}
-                    <p>{{ text }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-        <div class="column">
-            {% if reordered_answer_texts %}
-                <h2>Reorderd Markings</h2>
-                {% for text in reordered_marking_texts %}
-                    <p>{{ text }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-    </div>
-    <div class="row">  
-        <div class="column">
-            {% if similarity_results %}
-                <h2>Reorderd Answers</h2>
-                {% for text in similarity_results %}
-                    <p>{{ text }}</p>
-                {% endfor %}
-            {% endif %}
-        </div>
-    </div>
+    {% if results %}
+        {% for result in results %}
+            <div class="row">
+                <div class="column">
+                    <div class="row">
+                        <p>Answer : {{ result[0] }} <br>
+                            Marking : {{ result[1] }} <br>
+                            Similarity : {{ result[2] }}
+                        </p>
+                        {% if result[3] == True %}
+                            <p style="color: green;">Answer is correct<br></p>
+                        {% else %}
+                            <p style="color: red;">Answer is wrong<br></p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="column">
+                    <!-- <img src="{{ answer_src }}" alt="Answer Segment" width="400"> -->
+                    <p>Total Marks so far : {{ result[4] }} </p>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
 </body>
 </html>
 

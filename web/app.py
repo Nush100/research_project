@@ -30,8 +30,8 @@ def rearrange_text_with_chatgpt(text):
     )
     return response.choices[0].text.strip()
 
-def compare_similarity(text1, text2):
-    prompt = f"Compare the similarity between the following two texts. Check whether the idea of {text1} is identical to the idea of {text2}. Also can you give the final result as a percentage:"
+def compare_similarity(text1, text2, marks):
+    prompt = f"Compare the similarity between the following two texts. Check whether the idea of {text1} is identical to the idea of {text2}. Give the final result as a percentage:"
     
     response = openai.Completion.create(
         engine="text-davinci-003",  # You can use other engines as well
@@ -39,8 +39,13 @@ def compare_similarity(text1, text2):
         max_tokens=50
     )
     
-    return response.choices[0].text.strip()
-   
+    similarity_result = response.choices[0].text.strip()
+    if "100%" in similarity_result:
+        marks += 5
+        return similarity_result, True, marks
+    else:
+        marks = marks
+        return similarity_result, False, marks
 
 def segment_image(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -85,24 +90,33 @@ def read_input(answer_data, marking_data):
     # Get segments
     answer_segments = segment_image(answer_img)
     marking_segments = segment_image(marking_img)
-
-    # Encode segmented images
     encoded_answer_segments = [encode_images(segment) for segment in answer_segments]
-    encoded_marking_segments = [encode_images(segment) for segment in marking_segments]
-
-    answer_texts = [read_text_from_image(segment) for segment in answer_segments]
-    marking_texts = [read_text_from_image(segment) for segment in marking_segments]
 
     return (
         answered_image,
         marking_image,
-        encoded_answer_segments,
-        encoded_marking_segments,
-        answer_texts,
-        marking_texts
+        answer_segments,
+        marking_segments,
+        encoded_answer_segments
     )
 
+def process_segments(answer_segments, marking_segments):
+    marks = 0
+    results = []
+    for answer_segment, marking_segment in zip(answer_segments, marking_segments):
+        # Extract text from segments
+        answer_text = read_text_from_image(answer_segment)
+        marking_text = read_text_from_image(marking_segment)
 
+        # Rearrange text using ChatGPT
+        rearranged_answer_text = rearrange_text_with_chatgpt(answer_text)
+        rearranged_marking_text = rearrange_text_with_chatgpt(marking_text) 
+        similarity_result, result_value, marks = compare_similarity(rearranged_marking_text, rearranged_answer_text, marks)
+        
+        #time.sleep(60)
+        results.append((rearranged_answer_text, rearranged_marking_text, similarity_result, result_value, marks))
+
+    return results
 
 #connect to the front end
 @app.route('/', methods=['GET', 'POST'])
@@ -121,38 +135,19 @@ def index():
                 marking_image,
                 answer_segments,
                 marking_segments,
-                answer_texts,
-                marking_texts
+                encoded_img
             ) = read_input(answer_data, marking_data)
-            reordered_answer_texts = [
-                rearrange_text_with_chatgpt(text) 
-                for text in answer_texts
-            ]
-            time.sleep(60)
-            reordered_marking_texts = [
-                rearrange_text_with_chatgpt(text) 
-                for text in answer_texts
-            ]
-            time.sleep(60)
-            similarity_results = [
-                compare_similarity(answer_text, marking_text)
-                for answer_text, marking_text in zip(reordered_answer_texts, reordered_marking_texts)
-            ]
 
-            # Display the resized images and segments on the page
+            results = process_segments(answer_segments, marking_segments)
+            
             return render_template(
                 'index.html', 
                 answer_src=f"data:image/jpeg;base64,{answer_image}",
                 marking_src=f"data:image/jpeg;base64,{marking_image}",
-                answer_segments_src=[f"data:image/jpeg;base64,{segment}" for segment in answer_segments],
-                marking_segments_src=[f"data:image/jpeg;base64,{segment}" for segment in marking_segments],
-                answer_texts=answer_texts,
-                marking_texts=marking_texts,
-                reordered_answer_texts=reordered_answer_texts,
-                reordered_marking_texts=reordered_marking_texts,
-                similarity_results=similarity_results
+                results=results,
+                answer_segments_src=[f"data:image/jpeg;base64,{segment}" for segment in encoded_img]
             )
 
-    return render_template('index.html', answer_src=None, marking_src=None, answer_segments_src=None, marking_segments_src=None, answer_texts=None, marking_texts=None, reordered_answer_texts=None, reordered_marking_texts=None, similarity_results=None)
+    return render_template('index.html', answer_src=None, marking_src=None, results=None, answer_segments_src=None)
 if __name__ == '__main__':
     app.run(debug=True)
