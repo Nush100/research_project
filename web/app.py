@@ -3,120 +3,106 @@ import base64
 import cv2
 import numpy as np
 import openai
-from PIL import Image
 import easyocr
+import time
 
 openai.api_key = ''
 reader = easyocr.Reader(['en'], gpu=False)
 
-tick_image_path = "C:/Study/NSBM/research/sourcecode/images/questions/tick.png"
-cross_image_path = "C:/Study/NSBM/research/sourcecode/images/questions/cross.png"
-tick_image = cv2.imread(tick_image_path)
-cross_image = cv2.imread(cross_image_path)
-
 app = Flask(__name__)
 
-#read the text in the image
+def encode_images(image):
+    _, encoded_image = cv2.imencode('.jpg', image)
+    encoded_image = base64.b64encode(encoded_image).decode('utf-8')
+    return encoded_image
+
 def read_text_from_image(image_path):  
     results = reader.readtext(image_path)
-    extracted_text = ' '.join([result[1] for result in results])
-    print(extracted_text)
+    extracted_text = ' '.join([result[1] for result in results]) 
     return extracted_text
 
-#evaluate answer using chatgpt
-def evaluate_answer_chatgpt(answer_text):
-    prompt = f"Fact check: \"{answer_text}\"\n\nEvaluation:"
+def rearrange_text_with_chatgpt(text):
+    prompt = f"The given text is not in order. Rearrange the text in correct grammatical order and it should definitely start with the number. It should only include the details provided by the input text. No additional details are needed:\n\n{text}\n\nReordered text: "
     response = openai.Completion.create(
-        engine="text-davinci-003",
+        engine="text-davinci-003",  # You can experiment with different engines
         prompt=prompt,
-        max_tokens=100
+        max_tokens=150
     )
-    generated_text = response.choices[0].text.strip() 
-    print(generated_text)
-    if "true" in generated_text.lower():
-       sign = tick_image
-    else:
-        sign = cross_image
-    return generated_text, sign
+    return response.choices[0].text.strip()
 
-#evaluate the answer according to the marking scheme
-def evaluate_answer_marking(marking_txt, answer_txt): 
-    marks = 0
-    if marking_txt.lower() in answer_txt.lower():
-        sign = tick_image
-        word = "correct" 
-        marks = marks + 5
-    else:
-        sign = cross_image
-        word = "wrong" 
-        marks = marks + 5
-    return word, sign, marks
+def compare_similarity(text1, text2):
+    prompt = f"Compare the similarity between the following two texts. Check whether the idea of {text1} is identical to the idea of {text2}. Also can you give the final result as a percentage:"
+    
+    response = openai.Completion.create(
+        engine="text-davinci-003",  # You can use other engines as well
+        prompt=prompt,
+        max_tokens=50
+    )
+    
+    return response.choices[0].text.strip()
+   
 
+def segment_image(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, thresholded = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-#if the answer is correct add a tick to image else add a cross
-def overlay_tick_on_answer(answer_img, tick_img):
-    try:
-        # Convert NumPy array to PIL Image
-        answer_img_pil = Image.fromarray(cv2.cvtColor(answer_img, cv2.COLOR_BGR2RGB))
-        tick_img_pil = Image.fromarray(cv2.cvtColor(tick_img, cv2.COLOR_BGR2RGB))
+    horizontal_projection = np.sum(thresholded, axis=1)
 
-            # Resize the tick image to 150x150
-        tick_img_pil = tick_img_pil.resize((150, 100), resample=Image.BICUBIC)
+    # Calculate the maximum pixel value in the horizontal projection
+    max_projection_value = np.max(horizontal_projection)
 
-        # Ensure both images have an alpha channel
-        answer_img_pil = answer_img_pil.convert('RGBA')
-        tick_img_pil = tick_img_pil.convert('RGBA')
+    # Define a threshold value as a fraction of the maximum projection value
+    threshold_fraction = 0.999 
+    threshold = max_projection_value * threshold_fraction
 
-        # Calculate the position to overlay the tick image in the middle of the answer image
-        x_position = (answer_img_pil.width - tick_img_pil.width) // 2
-        y_position = (answer_img_pil.height - tick_img_pil.height) // 2
+    # Find segment start and end points based on values below the threshold
+    segment_start = None
+    segments = []
 
-        # Create a composite image with transparency
-        composite = Image.alpha_composite(answer_img_pil, Image.new('RGBA', answer_img_pil.size, (0, 0, 0, 0)))
-        composite.paste(tick_img_pil, (x_position, y_position), tick_img_pil)
+    for i, projection_value in enumerate(horizontal_projection):
+        if projection_value < threshold:
+            if segment_start is None:
+                segment_start = i
+        else:
+            if segment_start is not None:
+                # Check if the current segment is significant enough (e.g., greater than a certain height)
+                if i - segment_start >= 3:  # Adjust the height threshold as needed
+                    segments.append(thresholded[segment_start:i, :])
+                segment_start = None
+    return segments
 
-        # Convert the result back to NumPy array
-        result_img = cv2.cvtColor(np.array(composite), cv2.COLOR_RGBA2BGR)
-        return result_img
-    except Exception as e:
-        print(f"Error in overlay_tick_on_answer: {str(e)}")
-        return answer_img
 
 #read the images taken as input from front end   
-def read_images(answer_data, marking_data):
-    # Read images
+def read_input(answer_data, marking_data): 
     nparr_answer = np.frombuffer(answer_data, np.uint8)
     answer_img = cv2.imdecode(nparr_answer, cv2.IMREAD_COLOR)
     nparr_marking = np.frombuffer(marking_data, np.uint8)
     marking_img = cv2.imdecode(nparr_marking, cv2.IMREAD_COLOR)
 
-    _, encoded_answer = cv2.imencode('.jpg', answer_img)
-    encoded_answer = base64.b64encode(encoded_answer).decode('utf-8')
-    _, encoded_marking = cv2.imencode('.jpg', marking_img)
-    encoded_marking = base64.b64encode(encoded_marking).decode('utf-8')
+    answered_image = encode_images(answer_img)
+    marking_image = encode_images(marking_img)
 
-    answer_text =  read_text_from_image(answer_img)
-    marking_text = read_text_from_image(marking_img)
+    # Get segments
+    answer_segments = segment_image(answer_img)
+    marking_segments = segment_image(marking_img)
 
-    evaluation_marking, sign_marking, marks = evaluate_answer_marking(marking_text, answer_text)
-    print(evaluation_marking)
-    evaluation, sign = evaluate_answer_chatgpt(answer_text)
-    answer = overlay_tick_on_answer(answer_img, sign_marking)
-    
-    # Encode the answer grayscale image to base64
-    _, encoded_answer_modified = cv2.imencode('.jpg', answer)
-    encoded_answer_modified = base64.b64encode(encoded_answer_modified).decode('utf-8')
+    # Encode segmented images
+    encoded_answer_segments = [encode_images(segment) for segment in answer_segments]
+    encoded_marking_segments = [encode_images(segment) for segment in marking_segments]
+
+    answer_texts = [read_text_from_image(segment) for segment in answer_segments]
+    marking_texts = [read_text_from_image(segment) for segment in marking_segments]
 
     return (
-        f"data:image/jpeg;base64,{encoded_answer}",
-        f"data:image/jpeg;base64,{encoded_marking}",
-        answer_text,
-        marking_text,
-        f"data:image/jpeg;base64,{encoded_answer_modified}",
-        evaluation_marking,
-        evaluation,
-        marks
+        answered_image,
+        marking_image,
+        encoded_answer_segments,
+        encoded_marking_segments,
+        answer_texts,
+        marking_texts
     )
+
+
 
 #connect to the front end
 @app.route('/', methods=['GET', 'POST'])
@@ -130,22 +116,43 @@ def index():
             answer_data = answer.read()
             marking_data = marking.read()
 
-            answer_image, marking_image, answer_text, marking_text, answer_modified, evaluation_answer_marking, evaluation_answer_chatgpt, marks = read_images(answer_data, marking_data)
+            (
+                answer_image,
+                marking_image,
+                answer_segments,
+                marking_segments,
+                answer_texts,
+                marking_texts
+            ) = read_input(answer_data, marking_data)
+            reordered_answer_texts = [
+                rearrange_text_with_chatgpt(text) 
+                for text in answer_texts
+            ]
+            time.sleep(60)
+            reordered_marking_texts = [
+                rearrange_text_with_chatgpt(text) 
+                for text in answer_texts
+            ]
+            time.sleep(60)
+            similarity_results = [
+                compare_similarity(answer_text, marking_text)
+                for answer_text, marking_text in zip(reordered_answer_texts, reordered_marking_texts)
+            ]
 
-            # Display the resized images on the page
+            # Display the resized images and segments on the page
             return render_template(
                 'index.html', 
-                answer_src=answer_image,
-                marking_src=marking_image, 
-                answer_text=answer_text,
-                marking_text=marking_text,
-                answer_modified_src=answer_modified,
-                evaluation_answer_marking=evaluation_answer_marking,
-                evaluation_answer_chatgpt=evaluation_answer_chatgpt,
-                marks=marks
+                answer_src=f"data:image/jpeg;base64,{answer_image}",
+                marking_src=f"data:image/jpeg;base64,{marking_image}",
+                answer_segments_src=[f"data:image/jpeg;base64,{segment}" for segment in answer_segments],
+                marking_segments_src=[f"data:image/jpeg;base64,{segment}" for segment in marking_segments],
+                answer_texts=answer_texts,
+                marking_texts=marking_texts,
+                reordered_answer_texts=reordered_answer_texts,
+                reordered_marking_texts=reordered_marking_texts,
+                similarity_results=similarity_results
             )
 
-    return render_template('index.html', answer_src=None, marking_src=None, answer_text='', marking_text='', answer_modified_src=None, evaluation_answer_marking='', evaluation_answer_chatgpt='', marks='')
-
+    return render_template('index.html', answer_src=None, marking_src=None, answer_segments_src=None, marking_segments_src=None, answer_texts=None, marking_texts=None, reordered_answer_texts=None, reordered_marking_texts=None, similarity_results=None)
 if __name__ == '__main__':
     app.run(debug=True)
