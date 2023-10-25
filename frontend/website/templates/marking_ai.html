@@ -52,21 +52,18 @@
     </div>    
     <form method="POST" enctype="multipart/form-data">
         <div class="row centered" >
-                <p>Upload Answer Image</p>
-                <p>
-                    <input type="file" name="answer" class="btn btn-light">
-                    <input type="submit" value="Upload" class="btn btn-secondary">
-                </p>
+            <p>Upload Answer Image</p>
+            <p>
+                <input type="file" name="answer" class="btn btn-light">
+                <input type="submit" value="Upload" class="btn btn-secondary">
+            </p>
         </div>
     </form>
-    <div class="row">
-        <div class="column centered">
-            {% if answer_src %}
-                <h4>Original Answer Image:</h4>
-                <img src="{{ answer_src }}" alt="Original Answer Image" width="400">
-            {% endif %}
-            </div>
-        </div>
+    <div class="row centered">
+        {% if answer_src %}
+            <h4>Original Answer Image:</h4>
+            <img src="{{ answer_src }}" alt="Original Answer Image" width="400">
+        {% endif %}
     </div>
     {% if results %}
         <div>
@@ -76,8 +73,7 @@
             <div class="row">
                 <div class="column centered">
                     <img src="{{ result[6] }}" alt="Answer Segment" width="400">
-                    <p>Answer Given: {{ result[2] }}.
-                    </p>
+                    <p>Answer Given: {{ result[2] }}. </p>
                 </div>
                 <div class="column">
                     <p>
@@ -97,10 +93,12 @@
     {% if combined_image %}
         <div>
             <h2>Results</h2>
+        </div>
+        <div class="row centered">
             <p>Click on the image to download it:<p>
-                <a href="{{ combined_image }}" download="result">
-                    <img src="{{ combined_image }}" alt="Final Image" width="400">
-                </a>
+            <a href="{{ combined_image }}" download="result">
+                <img src="{{ combined_image }}" alt="Final Image" width="400">
+            </a>
         </div>
     {%endif%}
 </body>
