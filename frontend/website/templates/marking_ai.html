@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Paper Marking with Marking Scheme</title>
+    <link
+        rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous"
+    />
+    <style>
+        * {
+          box-sizing: border-box;
+        }
+        
+        .column {
+          float: left;
+          width: 50%;
+          padding: 10px;
+        }
+        
+        .row:after {
+          content: "";
+          display: table;
+          clear: both;
+        }
+
+        body {
+            background-image: url('../static/background1.jpeg');
+            background-size: cover; 
+            background-repeat: no-repeat;
+        }
+
+        .centered {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h2 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 20vh;
+        }
+
+        p{
+            margin: 10px;
+        }
+    </style>
+    <script>
+        function redirectToHomePage() {
+            window.location.href = "/";
+        }
+    </script>
+</head>
+<body>
+    <div style="text-align: center">
+        <h2>Auto Paper Marker</h2>
+    </div> 
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row centered" >
+            <p>Upload Answer Image</p>
+            <p>
+                <input type="file" name="answer" class="btn btn-light btn-outline-secondary">
+                <select name="institution" class="btn btn-light btn-outline-secondary">
+                    <option value="NSBM">NSBM</option>
+                    <option value="UMO">UMO</option>
+                </select><br/>
+                <label>Marks for one correct answer &nbsp</label><input type="number" name="correct_mark" placeholder="" class="btn btn-light btn-outline-secondary">
+                <br/>
+                <input type="submit" value="Upload" class="btn btn-secondary">
+            </p>
+        </div>
+    </form>
+    <br/>
+    {% if encoded_upper and encoded_lower %}
+        <div>
+            <h4 class="centered">Answer paper Segments</h4>
+        </div> 
+        <div class="row">
+            <div class="column centered">
+                <h4>Section 1:</h4>
+                <img src="{{ encoded_upper }}" alt="First Part" width="400">
+            </div>
+            <div class="column">
+                <h4>Section 2:</h4>
+                <img src="{{ encoded_lower }}" alt="Second Part" width="400">
+            </div>
+        </div>
+    {% endif %}
+    <br/>
+    {% if results %}
+        <div>
+            <h4 class="centered">Marked Answers</h4>
+        </div>
+        {% for result in results %}
+            <div class="row">
+                <div class="column centered">
+                    <img src="{{ result[6] }}" alt="Answer Segment" width="400">
+                    <p>Answer Given: <b>{{ result[2] }}.</b> </p>
+                </div>
+                <div class="column">
+                    <p>
+                        Reading Confidence Level: {{result[1]}} <br>
+                        Correctness: {{result[3]}}
+                        {% if result[4] == True %}
+                            <p style="color: green;">Answer is correct<br></p>
+                        {% else %}
+                            <p style="color: red;">Answer is wrong<br></p>
+                        {% endif %}
+                    </p>
+                    <p>Total Marks so far : <b>{{ result[5] }}</b> </p>
+                </div>
+            </div>
+            <br/>
+        {% endfor %}
+    {% endif %}
+    {% if combined_image %}
+        <div class="row centered">
+                <h4>Results</h4>
+                <p>To Download: Click on image<p>
+                <a href="{{ combined_image }}" download="result">
+                    <img src="{{ combined_image }}" alt="Final Image" width="400">
+                </a>
+        </div>
+    {%endif%}
+    <button class="btn btn-light" style="margin: 20px" onclick="redirectToHomePage()">
+        Back
+    </button>
+</body>
+</html>

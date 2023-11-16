@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+            integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+            crossorigin="anonymous"
+        />
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            .row {
+                display: flex;
+                flex-wrap: wrap; /* Allow columns to wrap to the next line */
+            }
+
+            /* Create two equal columns that sit next to each other */
+            .column {
+                flex: 50%;
+                padding: 10px;
+                height: 300px; /* Should be removed. Only for demonstration */
+            }
+
+            h2 {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 20vh;
+            }
+
+            p {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 15vh;
+            }
+            body {
+                background-image: url('../static/background1.jpeg');
+                background-size: cover; 
+                background-repeat: no-repeat;
+            }
+            .column {
+                float: left;
+                width: 50%;
+                padding: 10px;
+            }
+            .centered {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Add a media query for smaller screens */
+            @media (max-width: 768px) {
+                .column {
+                    flex: 100%; /* Make columns take up the full width */
+                    height: auto; /* Reset the height */
+                    margin-bottom: 10px; /* Add spacing between columns */
+                }
+            }
+        </style>
+        <script>
+            function redirectToMsPage() {
+                window.location.href = "/ms";
+            }
+            function redirectToAiPage() {
+                window.location.href = "/ai";
+            }
+        </script>
+    </head>
+    <body>
+        <h2>Welcome to Easy paper marking</h2>
+        <p>Mark your structured papers easily using Easy Paper Marking</p>
+        <div class="row">
+            <div class="column centered">
+                Do you have a Marking Scheme? <br><br>
+                <button class="btn btn-secondary"  onclick="redirectToMsPage()">
+                    Mark your paper using Marking Scheme
+                </button>
+            </div>
+            <div class="column centered">
+                You don't have a Marking Scheme? <b>Don't Worry!</b> <br>
+                <button class="btn btn-secondary" onclick="redirectToAiPage()">
+                    Mark your paper with Open AI
+                </button>
+            </div>
+        </div>
+    </body>
+</html>
