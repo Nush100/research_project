@@ -41,7 +41,15 @@
             align-items: center;
             height: 20vh;
         }
+        p{
+            margin: 10px;
+        }
     </style>
+    <script>
+        function redirectToHomePage() {
+            window.location.href = "/";
+        }
+    </script>
 </head>
 <body>
     <div style="text-align: center;">
@@ -52,11 +60,16 @@
             <div class="column centered">
                 <p>Upload Answer Image</p>
                 <input type="file" name="answer" class="btn btn-light">
+                <label>Select Institution: &nbsp</label><select name="institution" class="btn btn-light btn-outline-secondary">
+                    <option value="NSBM">NSBM</option>
+                    <option value="UMO">UMO</option>
+                </select>
             </div>
-            <div class="column centered">
+            <div class="column">
                 <p>Upload Marking Image</p>
-                <input type="file" name="marking" class="btn btn-light">
-                <input type="submit" value="Upload" class="btn btn-secondary">
+                <input type="file" name="marking" class="btn btn-light"><br>
+                <label>Marks for one correct answer: &nbsp </label><input type="number" name="correct_mark" placeholder="" class="btn btn-light btn-outline-secondary">
+                <br><input type="submit" value="Upload" class="btn btn-secondary">
             </div>
         </div>
     </form>
@@ -75,6 +88,63 @@
             </div>
         </div>
     </div>
+    <br>
+    {% if encoded_upper and encoded_lower %}
+        <div>
+            <h4 class="centered">Answer paper Segments</h4>
+        </div> 
+        <div class="row">
+            <div class="column centered">
+                <h4>Section 1:</h4>
+                <img src="{{ encoded_upper }}" alt="First Part" width="400">
+            </div>
+            <div class="column">
+                <h4>Section 2:</h4>
+                <img src="{{ encoded_lower }}" alt="Second Part" width="400">
+            </div>
+        </div>
+    {% endif %}
+    <br/>
+    {% if results %}
+        <div>
+            <h4 class="centered">Marked Answers</h4>
+        </div>
+        {% for result in results %}
+            <div class="row">
+                <div class="column centered">
+                    <img src="{{ result[5] }}" alt="Answer Segment" width="400">
+                    <p>Answer Given: <b>{{ result[0] }}.</b> <br>
+                    Answer in the Marking: <b>{{result[2]}}.</b></p>
+                </div>
+                <div class="column">
+                    <p>
+                        Reading Answer Confidence Level: {{result[1]}} <br>
+                        Correctness: {{result[3]}}<br>
+                        Similarity of the answer and marking: {{result[7]}} %
+                    </p>
+                    {% if result[3] == True %}
+                        <p style="color: green;">Answer is correct<br></p>
+                    {% else %}
+                        <p style="color: red;">Answer is wrong<br></p>
+                    {% endif %}
+                    <p>Total Marks so far : <b>{{ result[4] }}</b> </p>
+                </div>
+            </div>
+            <br/>
+        {% endfor %}
+    {% endif %}
+    {% if encoded_combine %}
+        <div class="row centered">
+                <h4>Results</h4>
+                <p>To Download: Click on image<p>
+                <a href="{{ encoded_combine }}" download="result">
+                    <img src="{{ encoded_combine }}" alt="Final Image" width="400">
+                </a> 
+        </div>
+    {%endif%}
+    <button class="btn btn-light" style="margin: 20px" onclick="redirectToHomePage()">
+        Back
+    </button>
 </body>
 </html>
 
